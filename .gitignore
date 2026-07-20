@@ -26,3 +26,12 @@ outputs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Reports
+reports/
+
+# Checkpoints folder
+checkpoints/
+
+# Agent configuration (if not intended for GitHub)
+.agents/

@@ -644,3 +644,472 @@ Users should be able to:
 without requiring programming knowledge.
 
 ---
+
+# 14. Dataset Description
+
+## 14.1 Dataset Overview
+
+The MedVision AI platform uses the **Chest X-ray Images (Pneumonia)** dataset published on Kaggle by Paul Mooney. The dataset is designed for binary image classification and contains pediatric chest radiographs categorized into two diagnostic classes:
+
+- Normal
+- Pneumonia
+
+The dataset is widely used in academic research and educational projects because it provides a well-organized directory structure and sufficient data for demonstrating deep learning techniques in medical image analysis.
+
+---
+
+## 14.2 Why This Dataset?
+
+The dataset was selected based on the following considerations:
+
+- Publicly available without licensing restrictions for research and educational use.
+- Well-organized directory structure that simplifies data loading.
+- Suitable dataset size for transfer learning.
+- Binary classification simplifies software development while demonstrating a complete AI pipeline.
+- Frequently used in medical imaging research, enabling comparison with existing studies.
+- Appropriate for developing explainable AI applications using Grad-CAM.
+
+Although larger datasets such as NIH ChestX-ray14 or CheXpert contain more disease categories, they require significantly more computational resources and complex multi-label learning strategies.
+
+For Version 1 of MedVision AI, a binary classification problem provides an ideal balance between model complexity, development time, and software engineering objectives.
+
+---
+
+## 14.3 Dataset Structure
+
+```
+dataset/
+
+├── train/
+│      ├── NORMAL/
+│      └── PNEUMONIA/
+│
+├── val/
+│      ├── NORMAL/
+│      └── PNEUMONIA/
+│
+└── test/
+       ├── NORMAL/
+       └── PNEUMONIA/
+```
+
+The dataset is already divided into:
+
+- Training Set
+- Validation Set
+- Testing Set
+
+This predefined structure simplifies reproducible experimentation.
+
+---
+
+## 14.4 Dataset Characteristics
+
+| Property | Description |
+|----------|-------------|
+| Imaging Modality | Chest X-ray |
+| Classification Type | Binary Classification |
+| Classes | Normal, Pneumonia |
+| Image Format | JPEG |
+| Color Space | Grayscale |
+| Task | Image Classification |
+
+---
+
+## 14.5 Dataset Limitations
+
+Although suitable for prototype development, the dataset has several limitations.
+
+- Binary disease classification only.
+- Limited demographic diversity.
+- Pediatric population only.
+- Images collected from a limited number of institutions.
+- Not representative of real-world hospital data.
+- No DICOM metadata.
+- No clinical information accompanies the images.
+
+These limitations should be considered before applying the model in clinical environments.
+
+---
+
+# 15. Technology Stack
+
+MedVision AI follows a modular software architecture in which each technology has a specific responsibility.
+
+| Layer | Technology |
+|--------|------------|
+| Programming Language | Python 3.11+ |
+| Deep Learning Framework | PyTorch |
+| Transfer Learning Model | EfficientNet-B0 |
+| Medical Image Processing | Pillow (PIL), OpenCV |
+| Numerical Computing | NumPy |
+| Data Analysis | Pandas |
+| Visualization | Matplotlib, Seaborn |
+| Machine Learning Utilities | Scikit-learn |
+| Explainable AI | Grad-CAM |
+| Backend Framework | FastAPI |
+| API Server | Uvicorn |
+| Frontend | Streamlit |
+| Database | SQLite |
+| ORM (Optional) | SQLAlchemy |
+| PDF Generation | ReportLab |
+| Version Control | Git |
+| Repository Hosting | GitHub |
+| Deployment | Docker |
+| IDE | Visual Studio Code |
+
+---
+
+# 16. Technology Selection Justification
+
+Every technology selected for MedVision AI was chosen after considering performance, simplicity, scalability, and suitability for AI application development.
+
+---
+
+## Python
+
+Python serves as the primary programming language because of its extensive ecosystem for artificial intelligence, machine learning, medical imaging, and web development.
+
+Advantages include:
+
+- Readable syntax
+- Rich AI libraries
+- Excellent community support
+- Cross-platform compatibility
+
+---
+
+## PyTorch
+
+PyTorch was selected because it provides:
+
+- Dynamic computational graphs
+- Excellent debugging support
+- Native transfer learning utilities
+- Large research community
+- Seamless GPU acceleration
+
+It is widely adopted in both academic research and industrial AI development.
+
+---
+
+## EfficientNet-B0
+
+EfficientNet-B0 was selected as the backbone model due to its excellent balance between accuracy and computational efficiency.
+
+Reasons include:
+
+- Pretrained ImageNet weights
+- Fewer parameters than larger CNNs
+- Faster inference
+- Lower GPU memory requirements
+- Strong benchmark performance
+
+Transfer learning significantly reduces training time while improving generalization on limited datasets.
+
+---
+
+## Why EfficientNet Instead of ResNet?
+
+ResNet is a proven and reliable architecture; however, EfficientNet offers several practical advantages for this project.
+
+| EfficientNet-B0 | ResNet50 |
+|-----------------|----------|
+| Smaller model size | Larger model |
+| Lower computational cost | Higher computation |
+| Faster inference | Slower inference |
+| Better parameter efficiency | More parameters |
+| Suitable for deployment | Better for large-scale training |
+
+For a lightweight, deployable prototype, EfficientNet-B0 is the more appropriate choice.
+
+---
+
+## FastAPI
+
+FastAPI was selected over Flask because it provides:
+
+- Higher performance
+- Automatic API documentation (Swagger UI)
+- Built-in data validation using Pydantic
+- Native asynchronous support
+- Modern Python type hints
+
+These features make it ideal for AI inference services.
+
+---
+
+## Streamlit
+
+Streamlit enables rapid development of interactive AI applications without requiring extensive frontend expertise.
+
+Benefits include:
+
+- Simple Python interface
+- Fast prototyping
+- Interactive widgets
+- Easy deployment
+- Excellent integration with AI workflows
+
+---
+
+## SQLite
+
+SQLite was selected because:
+
+- No separate database server is required.
+- Lightweight.
+- Easy to deploy.
+- Sufficient for single-user applications.
+- Minimal configuration.
+
+For larger deployments, SQLite can later be replaced by PostgreSQL or MySQL.
+
+---
+
+## Docker
+
+Docker ensures that the application runs consistently across different operating systems by packaging all dependencies into a portable container.
+
+Benefits include:
+
+- Environment consistency
+- Easy deployment
+- Dependency isolation
+- Reproducibility
+
+---
+
+# 17. High-Level System Architecture
+
+The MedVision AI platform follows a modular client-server architecture.
+
+```
+                        User
+
+                          │
+
+                          ▼
+
+               Streamlit Frontend
+
+                          │
+
+                          ▼
+
+                  FastAPI Backend
+
+                          │
+
+          ┌───────────────┼───────────────┐
+
+          ▼               ▼               ▼
+
+ Image Preprocessing   AI Inference   Database Service
+
+          │               │               │
+
+          ▼               ▼               ▼
+
+     EfficientNet-B0   Grad-CAM      SQLite Database
+
+                          │
+
+                          ▼
+
+                  PDF Report Generator
+
+                          │
+
+                          ▼
+
+                     Prediction Result
+```
+
+The architecture separates presentation, business logic, AI inference, explainability, and data storage, improving maintainability and scalability.
+
+---
+
+# 18. Software Module Design
+
+The software is divided into independent modules, each with a clearly defined responsibility.
+
+---
+
+## Frontend Module
+
+Responsibilities
+
+- Image upload
+- Result visualization
+- Display Grad-CAM
+- Download reports
+- View history
+
+Technology
+
+- Streamlit
+
+---
+
+## Backend Module
+
+Responsibilities
+
+- API endpoints
+- Model loading
+- Request validation
+- Prediction orchestration
+
+Technology
+
+- FastAPI
+
+---
+
+## Preprocessing Module
+
+Responsibilities
+
+- Image loading
+- Resize
+- Normalization
+- Tensor conversion
+
+---
+
+## AI Inference Module
+
+Responsibilities
+
+- Load EfficientNet model
+- Perform inference
+- Calculate confidence scores
+
+---
+
+## Explainability Module
+
+Responsibilities
+
+- Generate Grad-CAM heatmaps
+- Overlay activation maps
+- Save explanations
+
+---
+
+## Database Module
+
+Responsibilities
+
+- Store prediction history
+- Retrieve previous results
+
+Technology
+
+- SQLite
+
+---
+
+## Reporting Module
+
+Responsibilities
+
+- Generate PDF reports
+- Embed prediction results
+- Include Grad-CAM visualization
+
+---
+
+# 19. Folder Structure
+
+```
+MedVision-AI/
+
+│
+
+├── app/
+│   ├── api/
+│   ├── preprocessing/
+│   ├── models/
+│   ├── explainability/
+│   ├── database/
+│   ├── reporting/
+│   └── utils/
+│
+├── frontend/
+│
+├── dataset/
+│
+├── configs/
+│
+├── docs/
+│
+├── notebooks/
+│
+├── outputs/
+│
+├── tests/
+│
+├── models/
+│
+├── requirements.txt
+│
+├── Dockerfile
+│
+└── README.md
+```
+
+Each directory is responsible for one aspect of the application, supporting modular development and easier maintenance.
+
+---
+
+# 20. Data Flow Diagram (DFD)
+
+The following workflow illustrates the movement of data through the MedVision AI system.
+
+```
+User
+
+↓
+
+Upload Chest X-ray
+
+↓
+
+Image Validation
+
+↓
+
+Preprocessing
+
+↓
+
+EfficientNet-B0 Inference
+
+↓
+
+Prediction
+
+↓
+
+Grad-CAM Generation
+
+↓
+
+Confidence Score
+
+↓
+
+Store Prediction
+
+↓
+
+Generate PDF Report
+
+↓
+
+Display Results to User
+```
+
+The workflow demonstrates how raw medical images are transformed into explainable diagnostic outputs while maintaining prediction history and report generation.
