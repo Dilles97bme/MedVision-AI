@@ -145,8 +145,19 @@ def generate_gradcam(
     # Return
     # ------------------------------------------------------
 
+   # ------------------------------------------------------
+    # Convert NumPy arrays to PIL Images
+    # ------------------------------------------------------
+
+    original_pil = Image.fromarray(original)
+    overlay_pil = Image.fromarray(overlay)
+
+    # ------------------------------------------------------
+    # Return
+    # ------------------------------------------------------
+
     return {
-        "image": original,
+        "image": original_pil,
         "heatmap": heatmap,
-        "overlay": overlay,
+        "overlay": overlay_pil,
     }
