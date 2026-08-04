@@ -171,6 +171,8 @@ async def analyze(file: UploadFile = File(...)):
         "prediction": result,
         "report": report,
         "pdf": pdf_path.name,
+        "original_image": original_path.name,
+        "gradcam_image": overlay_path.name,
     }
 
 
@@ -255,3 +257,23 @@ def remove_prediction(prediction_id: int):
     return {
         "message": "Prediction deleted successfully."
     }
+
+
+@router.get("/images/{filename}")
+def get_image(filename: str):
+    """
+    Download generated images.
+    """
+
+    image_path = REPORTS_DIR / filename
+
+    if not image_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Image not found.",
+        )
+
+    return FileResponse(
+        image_path,
+        media_type="image/png",
+    )

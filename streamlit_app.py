@@ -9,59 +9,17 @@ Phase 1
 
 UI Foundation
 
-Author:
-Dilleswara Rao Intenaka
+
 ==============================================================
 """
-from pathlib import Path
 import json
-
-
-from app.inference.loader import load_model
-from app.inference.predictor import predict_image
-
-from app.explainability.pipeline import generate_gradcam
-from app.reporting.report import (
-    generate_report,
-    format_report,)
-from app.reporting.pdf import generate_pdf_report
-
+import requests
+from io import BytesIO
 from PIL import Image
 import streamlit as st
+import os
 
 
-# ----------------------------------------------------------
-# Checkpoint
-# ----------------------------------------------------------
-
-CHECKPOINT_PATH = Path(
-    "checkpoints/best_model.pth"
-)
-
-# ----------------------------------------------------------
-# Reports Directory
-# ----------------------------------------------------------
-
-REPORTS_DIR = Path("reports")
-REPORTS_DIR.mkdir(exist_ok=True)
-# ----------------------------------------------------------
-# Cached Model Loader
-# ----------------------------------------------------------
-
-
-@st.cache_resource
-def get_model():
-    """
-    Load the trained model only once.
-    """
-
-    model, device = load_model(
-        checkpoint_path=CHECKPOINT_PATH,
-        freeze_backbone=False,
-    )
-
-    return model, device
-# ----------------------------------------------------------
 # Page Configuration
 # ----------------------------------------------------------
 
@@ -120,21 +78,13 @@ st.sidebar.caption(
     "Version 1.0"
 )
 
-# ----------------------------------------------------------
-# Load Model
-# ----------------------------------------------------------
 
-try:
+API_URL = os.getenv(
+    "API_URL",
+    "http://localhost:8000/api/v1",
+)
+st.sidebar.success("✅ Connected to FastAPI")
 
-    model, device = get_model()
-
-    st.sidebar.success("✅ Model Loaded")
-
-except Exception as error:
-
-    st.error(f"Failed to load model.\n\n{error}")
-
-    st.stop()
 # ----------------------------------------------------------
 # Image Upload
 # ----------------------------------------------------------
@@ -182,30 +132,33 @@ if uploaded_file is not None:
 
         with st.spinner("Running inference..."):
 
-            result = predict_image(
-                image,
-                model,
-                device,
-            )
+            files = {
+                "file": (
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    uploaded_file.type,
+                )
+            }
+            try:
+                response = requests.post(
+                    f"{API_URL}/analyze",
+                    files=files,
+                    timeout=120,
+                )
 
-            gradcam_result = generate_gradcam(
-                image=image,
-                model=model,
-            )
+                response.raise_for_status()
 
-        # ----------------------------------------------------------
-        # Save Images for PDF
-        # ----------------------------------------------------------
+            except requests.exceptions.RequestException as e:
+                st.error(f"Cannot connect to FastAPI.\n\n{e}")
+                st.stop()
 
-        original_image_path = REPORTS_DIR / "original.png"
-        gradcam_image_path = REPORTS_DIR / "gradcam.png"
+            data = response.json()
 
-        # Save original image
-        gradcam_result["image"].save(original_image_path)
-
-        # Save Grad-CAM overlay
-
-        gradcam_result["overlay"].save(gradcam_image_path)
+        result = data["prediction"]
+        report = data["report"]
+        pdf_name = data["pdf"]
+        original_image = data["original_image"]
+        gradcam_image = data["gradcam_image"]
 
         st.success("Prediction completed.")
 
@@ -254,72 +207,69 @@ if uploaded_file is not None:
 
         st.divider()
 
+        st.divider()
+
         st.header("Explainability")
 
         col1, col2 = st.columns(2)
 
         with col1:
-            st.image(
-                gradcam_result["image"],
-                caption="Original Image",
-                width="stretch",
+
+            original_response = requests.get(
+                f"{API_URL}/images/{original_image}"
             )
+
+            if original_response.ok:
+                st.image(
+                    Image.open(
+                        BytesIO(original_response.content)
+                    ),
+                    caption="Original Image",
+                    width="stretch",
+                )
+            else:
+                st.error("Could not load original image.")
 
         with col2:
 
-            st.image(
-                gradcam_result["overlay"],
-                caption="Grad-CAM Overlay",
-                width="stretch",
+            gradcam_response = requests.get(
+                f"{API_URL}/images/{gradcam_image}"
             )
 
-        report = generate_report(
-            image_name=uploaded_file.name,
-            prediction=result["prediction"],
-            confidence=result["confidence"],
-            probabilities=result["probabilities"],
-            metadata={
-                "Model": "EfficientNet-B0",
-                "Device": str(device),
-            },
-        )
-
-        # ----------------------------------------------------------
-        # Generate PDF Report
-        # ----------------------------------------------------------
-
-        pdf_path = generate_pdf_report(
-            report=report,
-            output_path=REPORTS_DIR / "prediction_report.pdf",
-            original_image=original_image_path,
-            gradcam_image=gradcam_image_path,
-        )
+            if gradcam_response.ok:
+                st.image(
+                    Image.open(
+                        BytesIO(gradcam_response.content)
+                    ),
+                    caption="Grad-CAM Overlay",
+                    width="stretch",
+                )
+            else:
+                st.error("Could not load Grad-CAM image.")
 
         st.divider()
 
         st.header("📄 Prediction Report")
 
-        st.code(
-            format_report(report),
-            language="text",
-        )
-
         col1, col2 = st.columns(2)
 
         with col1:
+            pdf_response = requests.get(
+                f"{API_URL}/reports/{pdf_name}"
+            )
 
-            with open(pdf_path, "rb") as pdf_file:
-
+            if pdf_response.ok:
                 st.download_button(
                     label="📄 Download PDF",
-                    data=pdf_file,
-                    file_name="MedVision_AI_Report.pdf",
+                    data=pdf_response.content,
+                    file_name=pdf_name,
                     mime="application/pdf",
-                    width="stretch"
+                    width="stretch",
                 )
+            else:
+                st.error("Unable to download PDF report.")
 
         with col2:
-
             st.download_button(
                 label="📥 Download JSON",
                 data=json.dumps(report, indent=4),

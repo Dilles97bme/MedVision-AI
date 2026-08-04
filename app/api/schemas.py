@@ -21,3 +21,5 @@ class AnalyzeResponse(BaseModel):
     prediction: PredictionResponse
     report: dict
     pdf: str
+    original_image: str
+    gradcam_image: str
