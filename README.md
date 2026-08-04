@@ -30,36 +30,38 @@ The primary objective of the project is to demonstrate how modern deep learning 
 ## 🏗️ Project Architecture
 
 ```text
-                 Chest X-ray Image
-                         │
-                         ▼
-                 Image Preprocessing
-                         │
-                         ▼
-               EfficientNet-B0 Model
-                         │
-          ┌──────────────┴──────────────┐
-          ▼                             ▼
-   Prediction & Confidence        Grad-CAM Generation
-          │                             │
-          └──────────────┬──────────────┘
-                         ▼
-               Report Generation
-          (JSON + Professional PDF)
-                         │
-                         ▼
-            Interactive Streamlit UI
+                             User
+                              │
+                              ▼
+                      Streamlit Frontend
+                              │
+                    REST API (HTTP Requests)
+                              │
+                              ▼
+                      FastAPI Backend
+      ┌──────────────┬──────────────┬──────────────┐
+      │              │              │              │
+      ▼              ▼              ▼              ▼
+  EfficientNet-B0   Grad-CAM      SQLite     PDF/JSON Report
+      │              │              │              │
+      └──────────────┴──────────────┴──────────────┘
+                              │
+                              ▼
+                    Results Returned to UI
 ```
 
 
 ### Workflow
 
-1. **Upload:** The user uploads a chest X-ray image through the Streamlit interface.
-2. **Preprocessing:** The image is resized and transformed into the format expected by the trained model.
-3. **Inference:** EfficientNet-B0 predicts the presence or absence of pneumonia and computes confidence scores.
-4. **Explainability:** Grad-CAM generates a heatmap highlighting image regions that contributed most to the prediction.
-5. **Reporting:** Prediction results, confidence scores, and metadata are compiled into JSON and PDF reports.
-6. **Visualization:** The original image, Grad-CAM overlay, prediction summary, and downloadable reports are displayed through the web interface.
+### Workflow
+
+1. The user uploads a chest X-ray image through the Streamlit web interface.
+2. Streamlit sends the image to the FastAPI backend via a REST API.
+3. FastAPI preprocesses the image and performs inference using EfficientNet-B0.
+4. Grad-CAM generates an explainability heatmap highlighting important image regions.
+5. FastAPI generates structured JSON and PDF reports and stores prediction metadata in SQLite.
+6. The backend returns the prediction results, report information, and image paths to Streamlit.
+7. Streamlit displays the prediction, confidence scores, Grad-CAM visualization, and provides report downloads.
 
 ## 📂 Project Structure
 
@@ -67,7 +69,7 @@ The primary objective of the project is to demonstrate how modern deep learning 
 MedVision-AI/
 │
 ├── app/                            # Core application modules
-│   ├── api/                        # API components (future extension)
+│   ├── api/                        # FastAPI backend
 │   ├── database/                   # Database utilities
 │   ├── evaluation/                 # Model evaluation metrics
 │   ├── explainability/             # Grad-CAM implementation
@@ -94,7 +96,6 @@ MedVision-AI/
 │
 ├── docs/                           # Project documentation
 │
-├── frontend/                       # Frontend assets (future extension)
 │
 ├── notebooks/                      # Development & experimentation notebooks
 │   ├── Dataset Understanding
@@ -126,6 +127,10 @@ MedVision-AI/
 ├── streamlit_app.py                # Main Streamlit application
 ├── requirements.txt                # Project dependencies
 ├── README.md
+├── Dockerfile.api
+├── Dockerfile.streamlit
+├── docker-compose.yml
+├── requirements-docker.txt
 └── .gitignore
 ```
 
@@ -194,3 +199,170 @@ dataset/chest_xray/
 ```
 
 After downloading, ensure the folder structure matches the layout shown above before training or running inference.
+
+# 🛠️ Tech Stack
+
+| Category | Technologies |
+|-----------|--------------|
+| Programming Language | Python 3.11 |
+| Deep Learning | PyTorch, Torchvision |
+| Computer Vision | OpenCV, Pillow |
+| Explainable AI | Grad-CAM |
+| Web Framework | FastAPI |
+| Frontend | Streamlit |
+| Database | SQLite |
+| Report Generation | ReportLab, JSON |
+| Image Processing | Albumentations |
+| API Documentation | Swagger (OpenAPI) |
+| Containerization | Docker, Docker Compose |
+| Version Control | Git, GitHub |
+
+# 🌐 REST API
+
+### Local Base URL
+
+http://localhost:8000/api/v1
+
+> Once deployed, replace this with the public API URL.
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | /predict | Predict pneumonia |
+| POST | /analyze | Complete AI analysis |
+| GET | /history | View prediction history |
+| GET | /history/{id} | Prediction details |
+| DELETE | /history/{id} | Delete prediction |
+| GET | /reports/{filename} | Download PDF |
+| GET | /images/{filename} | View Grad-CAM |
+| GET | /model | Model information |
+| GET | /health | Health check |
+
+# 🐳 Docker
+
+### Build Images
+
+```bash
+docker compose build
+```
+
+### Start Services
+
+```bash
+docker compose up
+```
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+### Access the Applications
+
+| Service | URL |
+|----------|-----|
+| Streamlit | http://localhost:8501 |
+| FastAPI | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/docs |
+
+
+# ⚙️ Local Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/Dilles97bme/MedVision-AI.git
+cd MedVision-AI
+```
+
+## Create Virtual Environment
+
+```bash
+python -m venv .venv
+```
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## Run FastAPI
+
+```bash
+uvicorn app.api.main:app --reload
+```
+
+## Run Streamlit
+
+```bash
+streamlit run streamlit_app.py
+```
+
+
+---
+
+# 📷 Screenshots
+
+### Home Page
+
+![Home](images/home.png)
+
+### Prediction
+
+![Prediction](images/prediction.png)
+
+### Grad-CAM Visualization
+
+![GradCAM](images/gradcam.png)
+
+### Swagger UI
+
+![Swagger](images/swagger.png)
+
+## Docker Containers
+
+![Docker](images/docker.png)
+
+### PDF Report
+
+![pdf_report](images/pdf_report.png)
+
+---
+
+
+# 🚀 Future Work
+
+- Multi-class chest disease classification
+- DICOM image support
+- User authentication
+- PostgreSQL integration
+- Cloud deployment
+- CI/CD pipeline
+- Batch inference
+- Model monitoring
+- Multi-user support
+- Model versioning
+
+# 📄 License
+
+This project is released under the MIT License.
+
+# 🙏 Acknowledgements
+
+- PyTorch
+- FastAPI
+- Streamlit
+- Grad-CAM
+- OpenCV
+- Kaggle Chest X-ray Dataset
+
+
+
+## 👤 Author
+
+**Dilleswara Rao Intenaka**
+
+- GitHub: https://github.com/Dilles97bme
+- LinkedIn: https://www.linkedin.com/in/dilleswararaointenaka/
+- Email: dilles97bme@mail.com
